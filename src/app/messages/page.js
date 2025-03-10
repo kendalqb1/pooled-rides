@@ -20,6 +20,7 @@ function MessagesPage() {
     const [newMessage, setNewMessage] = useState('')
     const [sending, setSending] = useState(false)
     const [currentUserEmail, setCurrentUserEmail] = useState('')
+    const [currentViaje, setCurrentViaje] = useState('')
     const [replyTo, setReplyTo] = useState(null)
     const [isRecording, setIsRecording] = useState(false)
     const [audioBlob, setAudioBlob] = useState(null)
@@ -46,89 +47,96 @@ function MessagesPage() {
             setCurrentUserEmail(userEmail)
         }
 
+        const viajeId = searchParams.get('viaje')
+        if (viajeId) {
+            setCurrentViaje(viajeId)
+        }
         // Obtener cliente de Supabase
         const supabase = SupabaseClient.getInstance()
 
-        // Cargar mensajes iniciales
-        const fetchMessages = async () => {
-            try {
-                setLoading(true)
-                const { data, error } = await supabase
-                    .from('messages')
-                    .select('*')
-                    .order('created_at', { ascending: true }) // Ordenado cronológicamente
+        if (currentViaje) {
+            // Cargar mensajes iniciales
+            const fetchMessages = async () => {
+                try {
+                    setLoading(true)
+                    const { data, error } = await supabase
+                        .from('messages')
+                        .select('*')
+                        .eq('viaje_id', currentViaje)
+                        .order('created_at', { ascending: true }) // Ordenado cronológicamente
 
-                if (error) {
-                    throw error
-                }
-
-                if (data) {
-                    setMessages(data)
-                    // Hacemos scroll al cargar los mensajes iniciales
-                    setTimeout(scrollToBottom, 100)
-                }
-            } catch (error) {
-                console.error('Error fetching messages:', error)
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        fetchMessages()
-
-        // Suscribirse a cambios en tiempo real
-        const channel = supabase.channel('custom-messages-channel')
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'messages' },
-                (payload) => {
-                    // Actualizar el estado según el tipo de evento
-                    if (payload.eventType === 'INSERT') {
-                        setMessages(prevMessages => [...prevMessages, payload.new])
-                        // Hacer scroll cuando llega un nuevo mensaje
-                        setTimeout(scrollToBottom, 100)
-                    } else if (payload.eventType === 'UPDATE') {
-                        setMessages(prevMessages =>
-                            prevMessages.map(message =>
-                                message.id === payload.new.id ? payload.new : message
-                            )
-                        )
-                    } else if (payload.eventType === 'DELETE') {
-                        setMessages(prevMessages =>
-                            prevMessages.filter(message => message.id !== payload.old.id)
-                        )
+                    if (error) {
+                        throw error
                     }
+
+                    if (data) {
+                        setMessages(data)
+                        // Hacemos scroll al cargar los mensajes iniciales
+                        setTimeout(scrollToBottom, 100)
+                    }
+                } catch (error) {
+                    console.error('Error fetching messages:', error)
+                } finally {
+                    setLoading(false)
                 }
-            )
-            .subscribe()
+            }
 
-        // Configurar el observador de scroll para mostrar/ocultar el botón de scroll
-        const handleScroll = () => {
-            if (!messagesContainerRef.current) return
+            fetchMessages()
 
-            const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current
-            // Mostrar el botón cuando estamos a más de 300px del fondo
-            const shouldShowButton = scrollHeight - scrollTop - clientHeight > 300
-            setShowScrollButton(shouldShowButton)
-        }
+            // Suscribirse a cambios en tiempo real
+            const channel = supabase.channel('custom-messages-channel')
+                .on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: 'messages', filter: `viaje_id=eq.${currentViaje}` },
+                    (payload) => {
+                        // Actualizar el estado según el tipo de evento
+                        if (payload.eventType === 'INSERT') {
+                            setMessages(prevMessages => [...prevMessages, payload.new])
+                            // Hacer scroll cuando llega un nuevo mensaje
+                            setTimeout(scrollToBottom, 100)
+                        } else if (payload.eventType === 'UPDATE') {
+                            setMessages(prevMessages =>
+                                prevMessages.map(message =>
+                                    message.id === payload.new.id ? payload.new : message
+                                )
+                            )
+                        } else if (payload.eventType === 'DELETE') {
+                            setMessages(prevMessages =>
+                                prevMessages.filter(message => message.id !== payload.old.id)
+                            )
+                        }
+                    }
+                )
+                .subscribe()
 
-        const messagesContainer = messagesContainerRef.current
-        if (messagesContainer) {
-            messagesContainer.addEventListener('scroll', handleScroll)
-        }
+            // Configurar el observador de scroll para mostrar/ocultar el botón de scroll
+            const handleScroll = () => {
+                if (!messagesContainerRef.current) return
 
-        // Limpiar la suscripción cuando el componente se desmonte
-        return () => {
-            supabase.removeChannel(channel)
-            // Detener grabación si está activa al desmontar
-            stopRecording()
-            
-            // Eliminar el listener de scroll
+                const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current
+                // Mostrar el botón cuando estamos a más de 300px del fondo
+                const shouldShowButton = scrollHeight - scrollTop - clientHeight > 300
+                setShowScrollButton(shouldShowButton)
+            }
+
+            const messagesContainer = messagesContainerRef.current
             if (messagesContainer) {
-                messagesContainer.removeEventListener('scroll', handleScroll)
+                messagesContainer.addEventListener('scroll', handleScroll)
+            }
+
+            // Limpiar la suscripción cuando el componente se desmonte
+            return () => {
+                supabase.removeChannel(channel)
+                // Detener grabación si está activa al desmontar
+                stopRecording()
+
+                // Eliminar el listener de scroll
+                if (messagesContainer) {
+                    messagesContainer.removeEventListener('scroll', handleScroll)
+                }
             }
         }
-    }, [searchParams]) // Ahora depende de searchParams
+    }, [searchParams, currentViaje]) // Ahora depende de searchParams
 
     // Scroll al fondo cuando cambian los mensajes
     useEffect(() => {
@@ -157,7 +165,8 @@ function MessagesPage() {
             const messageData = {
                 content: newMessage.trim(),
                 created_by: currentUserEmail,
-                message_type: audioBlob ? 'audio' : 'text'
+                message_type: audioBlob ? 'audio' : 'text',
+                viaje_id: currentViaje
             }
 
             // Si estamos respondiendo a un mensaje, incluir esa información
@@ -311,10 +320,10 @@ function MessagesPage() {
 
     const handleTouchMove = (e, messageElement) => {
         if (!touchStartXRef.current) return
-        
+
         const touchCurrentX = e.touches[0].clientX
         const diff = touchCurrentX - touchStartXRef.current
-        
+
         // Solo permitimos deslizar de izquierda a derecha (valor positivo)
         if (diff > 0 && diff < 100) {
             messageElement.style.transform = `translateX(${diff}px)`
@@ -328,19 +337,19 @@ function MessagesPage() {
             messageElement.style.transition = 'transform 0.3s ease'
             return
         }
-        
+
         const touchEndX = e.changedTouches[0].clientX
         const diff = touchEndX - touchStartXRef.current
-        
+
         // Si el deslizamiento es mayor a 50px, consideramos que quiere responder
         if (diff > 50) {
             handleReply(swipedMessageRef.current)
         }
-        
+
         // Resetear la posición del mensaje con animación
         messageElement.style.transform = 'translateX(0)'
         messageElement.style.transition = 'transform 0.3s ease'
-        
+
         // Limpiar referencias
         touchStartXRef.current = null
         swipedMessageRef.current = null
@@ -415,7 +424,7 @@ function MessagesPage() {
             </div>
 
             {/* Área de mensajes con scroll */}
-            <div 
+            <div
                 ref={messagesContainerRef}
                 className="flex-1 overflow-y-auto p-4"
             >
@@ -445,7 +454,7 @@ function MessagesPage() {
                                     {group.messages.map(message => {
                                         // Referencia para el elemento del mensaje para manipulación en swipe
                                         const messageRef = React.createRef()
-                                        
+
                                         return (
                                             <div
                                                 key={message.id}
@@ -479,7 +488,7 @@ function MessagesPage() {
                                                             audioUrl={message.audio_url}
                                                             audioDuration={message.audio_duration}
                                                         />
-                                                        
+
                                                     </div>
                                                 ) : (
                                                     <p className="break-words text-black">{message.content}</p>
@@ -515,7 +524,7 @@ function MessagesPage() {
                         <div ref={messagesEndRef} />
                     </div>
                 )}
-                
+
                 {/* Botón de scroll hacia abajo */}
                 {showScrollButton && (
                     <button
