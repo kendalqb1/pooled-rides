@@ -1,9 +1,17 @@
 'use client'
 import { SupabaseClient } from '@/utils/supabaseClient'
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 
 export default function Messages() {
+    return (
+        <Suspense fallback={<div>Cargando...</div>}>
+            <MessagesPage />
+        </Suspense>
+    )
+}
+
+function MessagesPage() {
     const [messages, setMessages] = useState([])
     const [loading, setLoading] = useState(true)
     const [newMessage, setNewMessage] = useState('')
