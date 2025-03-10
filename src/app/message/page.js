@@ -1,7 +1,10 @@
 'use client'
-import { SupabaseClient } from '@/utils/supabaseClient'
 import React, { useEffect, useState, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
+
+import { SupabaseClient } from '@/utils/supabaseClient'
+import AudioPlayer from '@/components/AudioPlayer'
+import { formatTime } from '@/utils/helpers'
 
 export default function Messages() {
     return (
@@ -22,10 +25,14 @@ function MessagesPage() {
     const [audioBlob, setAudioBlob] = useState(null)
     const [recordingTime, setRecordingTime] = useState(0)
     const [audioUrl, setAudioUrl] = useState(null)
+    const [showScrollButton, setShowScrollButton] = useState(false)
     const messagesEndRef = useRef(null)
+    const messagesContainerRef = useRef(null)
     const mediaRecorderRef = useRef(null)
     const audioChunksRef = useRef([])
     const recordingTimerRef = useRef(null)
+    const touchStartXRef = useRef(null)
+    const swipedMessageRef = useRef(null)
     const searchParams = useSearchParams()
 
     const scrollToBottom = () => {
@@ -95,11 +102,31 @@ function MessagesPage() {
             )
             .subscribe()
 
+        // Configurar el observador de scroll para mostrar/ocultar el botón de scroll
+        const handleScroll = () => {
+            if (!messagesContainerRef.current) return
+
+            const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current
+            // Mostrar el botón cuando estamos a más de 300px del fondo
+            const shouldShowButton = scrollHeight - scrollTop - clientHeight > 300
+            setShowScrollButton(shouldShowButton)
+        }
+
+        const messagesContainer = messagesContainerRef.current
+        if (messagesContainer) {
+            messagesContainer.addEventListener('scroll', handleScroll)
+        }
+
         // Limpiar la suscripción cuando el componente se desmonte
         return () => {
             supabase.removeChannel(channel)
             // Detener grabación si está activa al desmontar
             stopRecording()
+            
+            // Eliminar el listener de scroll
+            if (messagesContainer) {
+                messagesContainer.removeEventListener('scroll', handleScroll)
+            }
         }
     }, [searchParams]) // Ahora depende de searchParams
 
@@ -264,13 +291,6 @@ function MessagesPage() {
         }
     }
 
-    // Función para formatear segundos como MM:SS
-    const formatTime = (seconds) => {
-        const mins = Math.floor(seconds / 60)
-        const secs = seconds % 60
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-    }
-
     // Función para manejar cuando el usuario quiere responder a un mensaje
     const handleReply = (message) => {
         setReplyTo(message)
@@ -281,6 +301,49 @@ function MessagesPage() {
     // Función para cancelar una respuesta
     const cancelReply = () => {
         setReplyTo(null)
+    }
+
+    // Funciones para el manejo de swipe (deslizar para responder)
+    const handleTouchStart = (e, message) => {
+        touchStartXRef.current = e.touches[0].clientX
+        swipedMessageRef.current = message
+    }
+
+    const handleTouchMove = (e, messageElement) => {
+        if (!touchStartXRef.current) return
+        
+        const touchCurrentX = e.touches[0].clientX
+        const diff = touchCurrentX - touchStartXRef.current
+        
+        // Solo permitimos deslizar de izquierda a derecha (valor positivo)
+        if (diff > 0 && diff < 100) {
+            messageElement.style.transform = `translateX(${diff}px)`
+            messageElement.style.transition = 'none'
+        }
+    }
+
+    const handleTouchEnd = (e, messageElement) => {
+        if (!touchStartXRef.current || !swipedMessageRef.current) {
+            messageElement.style.transform = 'translateX(0)'
+            messageElement.style.transition = 'transform 0.3s ease'
+            return
+        }
+        
+        const touchEndX = e.changedTouches[0].clientX
+        const diff = touchEndX - touchStartXRef.current
+        
+        // Si el deslizamiento es mayor a 50px, consideramos que quiere responder
+        if (diff > 50) {
+            handleReply(swipedMessageRef.current)
+        }
+        
+        // Resetear la posición del mensaje con animación
+        messageElement.style.transform = 'translateX(0)'
+        messageElement.style.transition = 'transform 0.3s ease'
+        
+        // Limpiar referencias
+        touchStartXRef.current = null
+        swipedMessageRef.current = null
     }
 
     // Función para determinar si un mensaje es del usuario actual
@@ -342,7 +405,7 @@ function MessagesPage() {
     const messageGroups = groupMessagesByDate(messages)
 
     return (
-        <div className="flex flex-col h-screen bg-gray-100">
+        <div className="flex flex-col h-screen bg-gray-900">
             {/* Cabecera */}
             <div className="bg-orange-500 text-white p-4 shadow-md">
                 <h1 className="text-xl font-bold">Mensajes</h1>
@@ -352,7 +415,10 @@ function MessagesPage() {
             </div>
 
             {/* Área de mensajes con scroll */}
-            <div className="flex-1 overflow-y-auto p-4">
+            <div 
+                ref={messagesContainerRef}
+                className="flex-1 overflow-y-auto p-4"
+            >
                 {loading ? (
                     <div className="flex justify-center items-center h-full">
                         <p>Cargando mensajes...</p>
@@ -376,63 +442,72 @@ function MessagesPage() {
                                     </div>
 
                                     {/* Mensajes del día */}
-                                    {group.messages.map(message => (
-                                        <div
-                                            key={message.id}
-                                            className={`max-w-xs md:max-w-md lg:max-w-lg rounded-lg p-3 my-2 shadow ${isCurrentUserMessage(message)
-                                                ? 'ml-auto bg-orange-100'
-                                                : 'mr-auto bg-white'
-                                                }`}
-                                        >
-                                            {/* Si es una respuesta, mostrar el mensaje original */}
-                                            {message.reply_to && (
-                                                <div className="mb-2 p-2 bg-gray-100 border-l-4 border-gray-300 rounded text-xs text-gray-600">
-                                                    <div className="font-semibold">
-                                                        {findMessageById(message.reply_to)?.created_by.split('@')[0] || 'Usuario'}
+                                    {group.messages.map(message => {
+                                        // Referencia para el elemento del mensaje para manipulación en swipe
+                                        const messageRef = React.createRef()
+                                        
+                                        return (
+                                            <div
+                                                key={message.id}
+                                                ref={messageRef}
+                                                className={`max-w-xs md:max-w-md lg:max-w-lg rounded-lg p-3 my-3 shadow ${isCurrentUserMessage(message)
+                                                    ? 'ml-auto bg-orange-100'
+                                                    : 'mr-auto bg-white'
+                                                    }`}
+                                                onTouchStart={(e) => handleTouchStart(e, message)}
+                                                onTouchMove={(e) => handleTouchMove(e, messageRef.current)}
+                                                onTouchEnd={(e) => handleTouchEnd(e, messageRef.current)}
+                                            >
+                                                {/* Si es una respuesta, mostrar el mensaje original */}
+                                                {message.reply_to && (
+                                                    <div className="mb-2 p-2 bg-gray-100 border-l-4 border-gray-300 rounded text-xs text-gray-600">
+                                                        <div className="font-semibold">
+                                                            {findMessageById(message.reply_to)?.created_by.split('@')[0] || 'Usuario'}
+                                                        </div>
+                                                        <p className="truncate">
+                                                            {findMessageById(message.reply_to)?.message_type === "text"
+                                                                ? findMessageById(message.reply_to)?.content.substring(0, 100) || 'Mensaje original'
+                                                                : '🎤 Mensaje de audio'}
+                                                        </p>
                                                     </div>
-                                                    <p className="truncate">
-                                                        {findMessageById(message.reply_to)?.message_type === "text"
-                                                            ? findMessageById(message.reply_to)?.content.substring(0, 100) || 'Mensaje original'
-                                                            : '🎤 Mensaje de audio'}
-                                                    </p>
-                                                </div>
-                                            )}
+                                                )}
 
-                                            {/* Contenido del mensaje - Texto o Audio */}
-                                            {message.message_type === 'audio' ? (
-                                                <div className="space-x-2">
-                                                    <AudioPlayer
-                                                        audioUrl={message.audio_url}
-                                                        audioDuration={message.audio_duration}
-                                                    />
-                                                    
-                                                </div>
-                                            ) : (
-                                                <p className="break-words text-black">{message.content}</p>
-                                            )}
+                                                {/* Contenido del mensaje - Texto o Audio */}
+                                                {message.message_type === 'audio' ? (
+                                                    <div className="space-x-2">
+                                                        <AudioPlayer
+                                                            audioUrl={message.audio_url}
+                                                            audioDuration={message.audio_duration}
+                                                        />
+                                                        
+                                                    </div>
+                                                ) : (
+                                                    <p className="break-words text-black">{message.content}</p>
+                                                )}
 
-                                            {/* Footer del mensaje */}
-                                            <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
-                                                <span>{message.created_by && message.created_by.split('@')[0]}</span>
-                                                <div className="flex items-center space-x-2">
-                                                    {/* Botón de respuesta */}
-                                                    <button
-                                                        onClick={() => handleReply(message)}
-                                                        className="text-gray-500 hover:text-orange-600"
-                                                        title="Responder"
-                                                    >
-                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                                                        </svg>
-                                                    </button>
+                                                {/* Footer del mensaje */}
+                                                <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
+                                                    <span>{message.created_by && message.created_by.split('@')[0]}</span>
+                                                    <div className="flex items-center space-x-2">
+                                                        {/* Botón de respuesta */}
+                                                        <button
+                                                            onClick={() => handleReply(message)}
+                                                            className="text-gray-500 hover:text-orange-600"
+                                                            title="Responder"
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                                            </svg>
+                                                        </button>
 
-                                                    <span>
-                                                        {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                    </span>
+                                                        <span>
+                                                            {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        )
+                                    })}
                                 </div>
                             ))
                         )}
@@ -440,10 +515,23 @@ function MessagesPage() {
                         <div ref={messagesEndRef} />
                     </div>
                 )}
+                
+                {/* Botón de scroll hacia abajo */}
+                {showScrollButton && (
+                    <button
+                        onClick={scrollToBottom}
+                        className="fixed bottom-24 right-6 bg-orange-500 text-white p-3 rounded-full shadow-lg hover:bg-orange-600 focus:outline-none z-10 transition-all duration-300 transform hover:scale-110"
+                        title="Ir al último mensaje"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                        </svg>
+                    </button>
+                )}
             </div>
 
             {/* Área de input fija en la parte inferior */}
-            <div className="bg-white p-4 border-t">
+            <div className="bg-gray-900 p-4 border-t">
                 {/* Mostrar a qué mensaje estamos respondiendo */}
                 {replyTo && (
                     <div className="mb-2 p-2 bg-gray-100 border-l-4 border-orange-500 rounded flex justify-between items-start">
@@ -469,16 +557,9 @@ function MessagesPage() {
 
                 {/* Si hay un audio grabado, mostrar player para previsualizar */}
                 {audioUrl && !isRecording && (
-                    <div className="mb-2 p-2 bg-gray-100 rounded flex justify-between items-center">
-                        <div className="flex items-center flex-1 space-x-2">
-                            <audio
-                                src={audioUrl}
-                                controls
-                                className="w-3/4"
-                            />
-                            <span className="text-xs text-gray-500">
-                                {formatTime(recordingTime)}
-                            </span>
+                    <div className="mb-2 p-2 bg-gray-100 rounded flex justify-center items-center">
+                        <div className='w-full'>
+                            <AudioPlayer audioUrl={audioUrl} audioDuration={recordingTime} />
                         </div>
                         <button
                             onClick={cancelRecording}
@@ -525,7 +606,7 @@ function MessagesPage() {
 
                 <form onSubmit={handleSubmit} className="flex space-x-2">
                     <textarea
-                        className="text-black flex-1 border rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                        className="text-white flex-1 border rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
                         placeholder={replyTo ? `Responder a ${replyTo.created_by.split('@')[0]}...` : "Escribe un mensaje..."}
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
@@ -544,7 +625,7 @@ function MessagesPage() {
                         <button
                             type="button"
                             onClick={startRecording}
-                            className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 disabled:bg-blue-300 focus:outline-none"
+                            className="bg-orange-500 text-white p-2 rounded-full hover:bg-orange-600 disabled:bg-orange-300 focus:outline-none"
                             disabled={sending || !currentUserEmail}
                             title="Grabar audio"
                         >
@@ -569,89 +650,3 @@ function MessagesPage() {
         </div>
     )
 }
-
-
-
-
-const AudioPlayer = ({ audioUrl, audioDuration }) => {
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [currentTime, setCurrentTime] = useState(0);
-    const audioRef = useRef(null);
-
-    const formatTime = (seconds) => {
-        const mins = Math.floor(seconds / 60)
-        const secs = (seconds % 60).toFixed(0)
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-    }
-
-    useEffect(() => {
-        const audio = audioRef.current;
-        if (!audio) return;
-
-        const updateTime = () => setCurrentTime(audio.currentTime);
-        const handleEnded = () => setIsPlaying(false);
-
-        audio.addEventListener('timeupdate', updateTime);
-        audio.addEventListener('ended', handleEnded);
-
-        return () => {
-            audio.removeEventListener('timeupdate', updateTime);
-            audio.removeEventListener('ended', handleEnded);
-        };
-    }, []);
-
-    const togglePlayPause = () => {
-        const audio = audioRef.current;
-        if (isPlaying) {
-            audio.pause();
-        } else {
-            audio.play();
-        }
-        setIsPlaying(!isPlaying);
-    };
-
-    const handleSeek = (e) => {
-        const audio = audioRef.current;
-        const seekPosition = e.target.value;
-        audio.currentTime = seekPosition;
-        setCurrentTime(seekPosition);
-    };
-
-    return (
-        <div className="p-4 ">
-            <audio ref={audioRef} src={audioUrl} className="hidden" />
-            <div className="flex items-center mb-2">
-                <button
-                    onClick={togglePlayPause}
-                    className="bg-orange-500 hover:bg-orange-600 text-white rounded-full w-10 h-10 flex items-center justify-center focus:outline-none"
-                >
-                    {isPlaying ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <rect x="6" y="5" width="3" height="10" rx="1" />
-                            <rect x="11" y="5" width="3" height="10" rx="1" />
-                        </svg>
-                    ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                        </svg>
-                    )}
-                </button>
-
-                <div className="ml-4 flex-grow">
-                    <input
-                        type="range"
-                        min="0"
-                        max={audioDuration}
-                        value={currentTime}
-                        onChange={handleSeek}
-                        className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer"
-                    />
-                    <div className="flex justify-between text-xs text-gray-600 mt-1">
-                        <span>{formatTime(currentTime)}</span>
-                        <span>{formatTime(audioDuration)}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
