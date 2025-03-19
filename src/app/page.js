@@ -1,9 +1,10 @@
-'use client'
+'use client';
 import React, { useState } from 'react';
+import { useRouter } from "next/navigation";
 
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
+  const router = useRouter();
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black">
       {/* Navbar */}
@@ -12,7 +13,10 @@ export default function LandingPage() {
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <div className="flex-shrink-0 flex items-center">
-                <span className="text-orange-500 font-bold text-2xl">PooledRides</span>
+              <span
+                  className="text-orange-500 font-bold text-2xl cursor-pointer"
+                  onClick={() => window.location.reload()}
+                >PooledRides</span>
               </div>
             </div>
 
@@ -20,7 +24,15 @@ export default function LandingPage() {
               <a href="#features" className="text-gray-300 hover:text-orange-500 px-3 py-2 rounded-md text-sm font-medium">Características</a>
               <a href="#plans" className="text-gray-300 hover:text-orange-500 px-3 py-2 rounded-md text-sm font-medium">Planes</a>
               <a href="#about" className="text-gray-300 hover:text-orange-500 px-3 py-2 rounded-md text-sm font-medium">Acerca de</a>
-              <a href="#contact" className="bg-orange-500 text-black px-4 py-2 rounded-md text-sm font-medium hover:bg-orange-600">Contacto</a>
+              <a href="#contact" className="text-gray-300 hover:text-orange-500 px-3 py-2 rounded-md text-sm font-medium">Contacto</a>
+              
+              <button 
+                onClick={() => router.push("/login")}
+                className="bg-orange-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-orange-600"
+              >
+                Iniciar Sesión
+              </button>
+
             </div>
 
             <div className="md:hidden flex items-center">
@@ -43,7 +55,15 @@ export default function LandingPage() {
               <a href="#features" className="text-gray-300 hover:text-orange-500 block px-3 py-2 rounded-md text-base font-medium">Características</a>
               <a href="#plans" className="text-gray-300 hover:text-orange-500 block px-3 py-2 rounded-md text-base font-medium">Planes</a>
               <a href="#about" className="text-gray-300 hover:text-orange-500 block px-3 py-2 rounded-md text-base font-medium">Acerca de</a>
-              <a href="#contact" className="bg-orange-500 text-black block px-3 py-2 rounded-md text-base font-medium">Contacto</a>
+              <a href="#contact" className="text-gray-300 hover:text-orange-500 block px-3 py-2 rounded-md text-base font-medium">Contacto</a>
+              
+              <button 
+                onClick={() => router.push("/login")}
+                className="bg-orange-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-orange-800"
+              >
+                Iniciar Sesión
+              </button>
+
             </div>
           </div>
         )}
@@ -90,15 +110,17 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="mt-16 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-16 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 justify-items-center">
             {/* Feature 1 */}
             <div className="bg-gray-800 rounded-lg p-6 hover:shadow-lg transition-shadow border border-orange-500">
-              <div className="flex items-center justify-center h-12 w-12 rounded-md bg-orange-500 text-black mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
+              <div className="flex items-center mb-4">
+                <div className="h-12 w-12 flex items-center justify-center rounded-md bg-orange-500 text-black mr-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-white">Perfiles de Usuario</h3>
               </div>
-              <h3 className="text-lg font-medium text-white">Perfiles de Usuario</h3>
               <p className="mt-2 text-gray-300">
                 Crea perfiles y asigna roles (conductor, pasajero o empresa) con verificación de documentos mediante imágenes.
               </p>
@@ -106,12 +128,14 @@ export default function LandingPage() {
 
             {/* Feature 2 */}
             <div className="bg-gray-800 rounded-lg p-6 hover:shadow-lg transition-shadow border border-orange-500">
-              <div className="flex items-center justify-center h-12 w-12 rounded-md bg-orange-500 text-black mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4" />
-                </svg>
+              <div className="flex items-center mb-4">
+                <div className="h-12 w-12 flex items-center justify-center rounded-md bg-orange-500 text-black mr-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-white">Gestión de Viajes</h3>
               </div>
-              <h3 className="text-lg font-medium text-white">Gestión de Viajes</h3>
               <p className="mt-2 text-gray-300">
                 Registra viajes con detalles de rutas y horarios, coordina grupos y controla disponibilidad de asientos.
               </p>
@@ -119,33 +143,21 @@ export default function LandingPage() {
 
             {/* Feature 3 */}
             <div className="bg-gray-800 rounded-lg p-6 hover:shadow-lg transition-shadow border border-orange-500">
-              <div className="flex items-center justify-center h-12 w-12 rounded-md bg-orange-500 text-black mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
+              <div className="flex items-center mb-4">
+                <div className="h-12 w-12 flex items-center justify-center rounded-md bg-orange-500 text-black mr-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-white">Módulo de Reportería</h3>
               </div>
-              <h3 className="text-lg font-medium text-white">Módulo de Reportería</h3>
               <p className="mt-2 text-gray-300">
                 Accede a reportes de viajes realizados, estadísticas de uso y exporta documentos en formato PDF.
-              </p>
-            </div>
-
-            {/* Feature 4 */}
-            <div className="bg-gray-800 rounded-lg p-6 hover:shadow-lg transition-shadow border border-orange-500">
-              <div className="flex items-center justify-center h-12 w-12 rounded-md bg-orange-500 text-black mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-medium text-white">Módulo de Vacaciones</h3>
-              <p className="mt-2 text-gray-300">
-                Gestión automática de sustituciones durante periodos de ausencia, con notificaciones integradas.
               </p>
             </div>
           </div>
         </div>
       </section>
-
       {/* Plans Section */}
       <section id="plans" className="py-16 bg-black">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -259,12 +271,6 @@ export default function LandingPage() {
                     <p className="ml-3 text-base text-gray-300">Opciones de personalización para rutas</p>
                   </li>
                   <li className="flex items-start">
-                    <div className="flex-shrink-0">
-                      <svg className="h-6 w-6 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <p className="ml-3 text-base text-gray-300">Calendario de vacaciones integrado</p>
                   </li>
                   <li className="flex items-start">
                     <div className="flex-shrink-0">
