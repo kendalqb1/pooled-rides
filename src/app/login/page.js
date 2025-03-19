@@ -17,13 +17,14 @@ export default function Login() {
     const redirectAfterLogin = () => {
         // Verificar si hay una ruta guardada a la que redirigir
         const redirectPath = sessionStorage.getItem('redirectAfterLogin');
+        console.log('Redirect path after login:', redirectPath);
+
         if (redirectPath) {
             sessionStorage.removeItem('redirectAfterLogin');
             router.push(redirectPath);
         } else {
             // Si no hay ruta guardada, ir a la página de viajes
-            const queryParam = `?userEmail=${email}`;
-            router.push(`/viajes${queryParam}`);
+            router.push('/viajes');
         }
     };
 
@@ -51,10 +52,11 @@ export default function Login() {
                 return;
             }
 
+            // Give a moment for the auth state to update and then redirect
             setTimeout(() => {
                 redirectAfterLogin();
                 setIsLoading(false);
-            }, 200);
+            }, 500);
 
         } catch (err) {
             console.error('Error en handleLogin:', err);
@@ -87,7 +89,7 @@ export default function Login() {
                     className="w-full mt-2 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
 
-                <label htmlFor="password" className="block text-lg font-medium">
+                <label htmlFor="password" className="block text-lg font-medium mt-4">
                     Contraseña
                 </label>
                 <input
@@ -103,6 +105,7 @@ export default function Login() {
                 <button
                     type="submit"
                     className="w-full mt-4 bg-orange-500 text-white py-2 rounded-md hover:bg-orange-800 transition"
+                    disabled={isLoading}
                 >
                     {!isLoading ? "Iniciar Sesion" : "Cargando..."}
                 </button>
@@ -111,13 +114,14 @@ export default function Login() {
                     type="button"
                     onClick={redirectToRegistro}
                     className="w-full mt-4 bg-orange-500 text-white py-2 rounded-md hover:bg-orange-800 transition"
+                    disabled={isLoading}
                 >
                     Registrate
                 </button>
             </form>
 
             {/* Enlace para restablecer la contraseña */}
-            <p className="text-center text-gray-600 mt-4">
+            <p className="text-center text-white mt-4">
                 <a
                     onClick={redirectToResetPassword}
                     className="text-orange-500 hover:underline cursor-pointer"

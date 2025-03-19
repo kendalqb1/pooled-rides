@@ -11,6 +11,7 @@ export function AuthProvider({ children }) {
     const [user, setUser] = useState(null)
     const [userRole, setUserRole] = useState(null)
     const [loading, setLoading] = useState(true)
+    const [sessionChecked, setSessionChecked] = useState(false)
     const router = useRouter()
 
     const supabase = SupabaseClient.getInstance()
@@ -42,63 +43,62 @@ export function AuthProvider({ children }) {
         }
 
         setUser(currentUser)
+
+        // Fetch and set user role whenever user changes
+        const role = await fetchUserRole(currentUser.id)
+        setUserRole(role)
     }, [])
 
+    // Initialize auth state on load
     useEffect(() => {
-        let mounted = true;
-
-        // Función para obtener el rol y actualizar el estado
-        const updateUserWithRole = async (currentUser) => {
-            if (!currentUser) {
-                setUser(null);
-                setUserRole(null);
-                return;
-            }
-
-            setUser(currentUser);
-
-            // Obtener el rol del usuario
-            const role = await fetchUserRole(currentUser.id);
-            setUserRole(role);
-        };
-
-        // Verificar la sesión inicial
         const initializeAuth = async () => {
             try {
-                const { data } = await supabase.auth.getSession();
+                setLoading(true)
 
-                if (mounted && data?.session?.user) {
-                    await updateUserWithRole(data.session.user);
+                // Check if there's an active session
+                const { data, error } = await supabase.auth.getSession()
+
+                if (error) {
+                    console.error('Error getting session:', error)
+                    return
+                }
+
+                if (data?.session?.user) {
+                    await updateUserState(data.session.user)
                 }
             } catch (error) {
-                console.error('Error initializing auth:', error);
+                console.error('Error checking session:', error)
             } finally {
-                if (mounted) setLoading(false);
+                setLoading(false)
+                setSessionChecked(true)
             }
-        };
+        }
 
-        initializeAuth();
+        initializeAuth()
+    }, [updateUserState])
 
-        // Suscribirse a cambios de autenticación
-        const { data: subscription } = supabase.auth.onAuthStateChange(async (event, session) => {
-            if (mounted) {
+    // Listen for auth changes
+    useEffect(() => {
+        const { data: authListener } = supabase.auth.onAuthStateChange(
+            async (event, session) => {
+                console.log('Auth state changed:', event, session ? 'session exists' : 'no session')
+
                 if (session?.user) {
-                    await updateUserWithRole(session.user);
+                    await updateUserState(session.user)
                 } else {
-                    setUser(null);
-                    setUserRole(null);
+                    setUser(null)
+                    setUserRole(null)
                 }
-                setLoading(false);
             }
-        });
+        )
 
         return () => {
-            mounted = false;
-            subscription?.subscription?.unsubscribe();
-        };
-    }, []);
+            authListener?.subscription?.unsubscribe()
+        }
+    }, [updateUserState])
 
     const hasRole = useCallback((requiredRole) => {
+        if (!userRole || !requiredRole) return false
         return roleHierarchy[userRole] >= roleHierarchy[requiredRole]
     }, [userRole])
 
@@ -110,8 +110,6 @@ export function AuthProvider({ children }) {
 
             if (data.user) {
                 await updateUserState(data.user)
-                const role = await fetchUserRole(data.user.id)
-                setUserRole(role)
             }
             return { success: true }
         } catch (error) {
@@ -140,7 +138,16 @@ export function AuthProvider({ children }) {
     }
 
     return (
-        <AuthContext.Provider value={{ user, userRole, loading, login, logout, hasRole, isAuthenticated: !!user }}>
+        <AuthContext.Provider value={{
+            user,
+            userRole,
+            loading,
+            login,
+            logout,
+            hasRole,
+            isAuthenticated: !!user,
+            sessionChecked
+        }}>
             {children}
         </AuthContext.Provider>
     )

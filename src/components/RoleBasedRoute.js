@@ -6,42 +6,38 @@ import { useEffect, useState } from 'react'
 export default function RoleBasedRoute({
     children,
     requiredRole = 'usuario',
-    fallbackUrl = '/login',
     unauthorizedUrl = '/accesoDenegado'
 }) {
-    const { loading, isAuthenticated, hasRole, user } = useAuth();
+    const { loading, isAuthenticated, hasRole, sessionChecked } = useAuth();
     const router = useRouter();
     const [isRedirecting, setIsRedirecting] = useState(false);
 
     useEffect(() => {
-        // Solo redireccionar cuando no está cargando y sabemos el estado del usuario
-        if (!loading) {
-            if (!isAuthenticated) {
-                setIsRedirecting(true);
+        // Don't do anything until the initial session check is complete
+        if (!sessionChecked) return;
 
-                // Guardar la URL actual para redirigir de vuelta después del login
-                const currentPath = window.location.pathname;
-                if (currentPath !== '/login' && currentPath !== '/registro') {
-                    sessionStorage.setItem('redirectAfterLogin', currentPath);
-                }
+        // Skip redirect logic while loading
+        if (loading) return;
 
-                router.push(fallbackUrl);
-            } else if (requiredRole && !hasRole(requiredRole)) {
-                setIsRedirecting(true);
-                router.push(unauthorizedUrl);
-            }
+        // AuthStateManager already handles the redirection for unauthenticated users
+        // Here we just need to check if the user has the required role
+        if (isAuthenticated && requiredRole && !hasRole(requiredRole)) {
+            console.log('User does not have required role:', requiredRole);
+            setIsRedirecting(true);
+            router.push(unauthorizedUrl);
         }
-    }, [loading, isAuthenticated, hasRole, requiredRole, router, fallbackUrl, unauthorizedUrl]);
+    }, [loading, isAuthenticated, hasRole, requiredRole, router, unauthorizedUrl, sessionChecked]);
 
-    // Mostrar indicador de carga
+    // Show loading state
     if (loading || isRedirecting) {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen p-4">
                 <div className="w-12 h-12 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+                <p className="mt-4 text-lg">Verificando permisos...</p>
             </div>
         );
     }
 
-    // Si está autenticado y tiene el rol requerido, muestra la página protegida
+    // If authenticated and has the required role, show the protected content
     return children;
 }
