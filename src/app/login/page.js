@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation"; // Para Next.js 13+
-import { SupabaseClient } from "../../utils/supabaseClient"; // Asegúrate de importar correctamente el archivo
 import { useAuth } from "@/context/AuthContext";
 import { traducirErrorSupabase } from "@/utils/helpers";
 
@@ -30,27 +29,30 @@ export default function Login() {
         router.push("/cambioClave");
     };
 
-    // Maneja el login
     const handleLogin = async (e) => {
         e.preventDefault();
         setIsLoading(true);
-        setError(""); // Limpiar el error si el usuario intenta de nuevo
+        setError("");
 
         try {
             const { success, data, error } = await login(email, password);
+
             if (!success) {
-                setError(traducirErrorSupabase(error)); // Si hay un error, mostrarlo
-                return; // No redirigir si hay error
+                setError(traducirErrorSupabase(error));
+                setIsLoading(false);
+                return;
             }
 
-            // Si login es exitoso, redirigir a la página de "viajes"
-            redirectToViajes();
+            setTimeout(() => {
+                redirectToViajes();
+                setIsLoading(false);
+            }, 200);
+
         } catch (err) {
+            console.error('Error en handleLogin:', err);
             setError("Hubo un problema al intentar iniciar sesión.");
-        } finally {
             setIsLoading(false);
         }
-
     };
 
     return (

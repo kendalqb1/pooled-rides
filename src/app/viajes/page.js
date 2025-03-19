@@ -17,7 +17,7 @@ function ViajePage() {
     const [currentUserEmail, setCurrentUserEmail] = useState(null);
     const router = useRouter();
     const searchParams = useSearchParams();
-    const {logout} = useAuth();
+    const { logout, userRole } = useAuth();
 
     useEffect(() => {
         const userEmail = searchParams.get('userEmail');
@@ -29,6 +29,8 @@ function ViajePage() {
     const handleLogout = async () => {
         await logout()
     }
+
+    console.log(userRole)
 
     return (
         <RoleBasedRoute>
