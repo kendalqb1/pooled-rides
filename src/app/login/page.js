@@ -1,22 +1,30 @@
 'use client';
 
 import { useState } from "react";
-import { useRouter } from "next/navigation"; // Para Next.js 13+
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { traducirErrorSupabase } from "@/utils/helpers";
 
 export default function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [error, setError] = useState(""); // Estado para manejar el error
+    const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const { login } = useAuth();
     const router = useRouter();
 
-    // Redirige a la página de "viajes" con el parámetro del correo del usuario
-    const redirectToViajes = () => {
-        const queryParam = `?userEmail=${email}`;
-        router.push(`/viajes${queryParam}`);
+    // Función mejorada para redirigir después del login
+    const redirectAfterLogin = () => {
+        // Verificar si hay una ruta guardada a la que redirigir
+        const redirectPath = sessionStorage.getItem('redirectAfterLogin');
+        if (redirectPath) {
+            sessionStorage.removeItem('redirectAfterLogin');
+            router.push(redirectPath);
+        } else {
+            // Si no hay ruta guardada, ir a la página de viajes
+            const queryParam = `?userEmail=${email}`;
+            router.push(`/viajes${queryParam}`);
+        }
     };
 
     // Redirige a la página de registro
@@ -35,7 +43,7 @@ export default function Login() {
         setError("");
 
         try {
-            const { success, data, error } = await login(email, password);
+            const { success, error } = await login(email, password);
 
             if (!success) {
                 setError(traducirErrorSupabase(error));
@@ -44,7 +52,7 @@ export default function Login() {
             }
 
             setTimeout(() => {
-                redirectToViajes();
+                redirectAfterLogin();
                 setIsLoading(false);
             }, 200);
 
@@ -64,7 +72,7 @@ export default function Login() {
 
             <form
                 className="bg-white p-6 rounded-lg shadow-md w-80"
-                onSubmit={handleLogin} // Maneja el login aquí
+                onSubmit={handleLogin}
             >
                 <label htmlFor="email" className="block text-lg font-medium">
                     Correo Electronico

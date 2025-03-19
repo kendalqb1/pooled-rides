@@ -1,6 +1,7 @@
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import AuthStateManager from "@/components/AuthStateManager";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -17,10 +18,10 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <AuthProvider>
-        <body
-          className={`${poppins.variable} antialiased`}
-        >
-          {children}
+        <body className={`${poppins.variable} antialiased`}>
+          <AuthStateManager>
+            {children}
+          </AuthStateManager>
         </body>
       </AuthProvider>
     </html>

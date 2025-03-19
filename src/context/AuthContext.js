@@ -16,7 +16,6 @@ export function AuthProvider({ children }) {
     const supabase = SupabaseClient.getInstance()
 
     const fetchUserRole = async (userId) => {
-        console.log('first')
         try {
             const { data, error } = await supabase
                 .from('Perfiles')
@@ -46,33 +45,58 @@ export function AuthProvider({ children }) {
     }, [])
 
     useEffect(() => {
-        let mounted = true
+        let mounted = true;
 
-        const handleAuthChange = async (event, session) => {
-            if (mounted) {
-                await updateUserState(session?.user || null)
-                setLoading(false)
+        // Función para obtener el rol y actualizar el estado
+        const updateUserWithRole = async (currentUser) => {
+            if (!currentUser) {
+                setUser(null);
+                setUserRole(null);
+                return;
             }
-        }
+
+            setUser(currentUser);
+
+            // Obtener el rol del usuario
+            const role = await fetchUserRole(currentUser.id);
+            setUserRole(role);
+        };
 
         // Verificar la sesión inicial
-        supabase.auth.getSession()
-            .then(({ data }) => {
-                if (mounted) {
-                    updateUserState(data?.session?.user || null)
-                    setLoading(false)
+        const initializeAuth = async () => {
+            try {
+                const { data } = await supabase.auth.getSession();
+
+                if (mounted && data?.session?.user) {
+                    await updateUserWithRole(data.session.user);
                 }
-            })
-            .catch((error) => console.error('Error obteniendo sesión:', error))
+            } catch (error) {
+                console.error('Error initializing auth:', error);
+            } finally {
+                if (mounted) setLoading(false);
+            }
+        };
+
+        initializeAuth();
 
         // Suscribirse a cambios de autenticación
-        const { data: subscription } = supabase.auth.onAuthStateChange(handleAuthChange)
+        const { data: subscription } = supabase.auth.onAuthStateChange(async (event, session) => {
+            if (mounted) {
+                if (session?.user) {
+                    await updateUserWithRole(session.user);
+                } else {
+                    setUser(null);
+                    setUserRole(null);
+                }
+                setLoading(false);
+            }
+        });
 
         return () => {
-            mounted = false
-            subscription?.subscription?.unsubscribe()
-        }
-    }, [updateUserState])
+            mounted = false;
+            subscription?.subscription?.unsubscribe();
+        };
+    }, []);
 
     const hasRole = useCallback((requiredRole) => {
         return roleHierarchy[userRole] >= roleHierarchy[requiredRole]
