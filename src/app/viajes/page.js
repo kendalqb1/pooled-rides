@@ -1,4 +1,6 @@
 'use client'
+import RoleBasedRoute from "@/components/RoleBasedRoute";
+import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -15,6 +17,7 @@ function ViajePage() {
     const [currentUserEmail, setCurrentUserEmail] = useState(null);
     const router = useRouter();
     const searchParams = useSearchParams();
+    const {logout} = useAuth();
 
     useEffect(() => {
         const userEmail = searchParams.get('userEmail');
@@ -23,8 +26,13 @@ function ViajePage() {
         }
     }, [router.query]);
 
+    const handleLogout = async () => {
+        await logout()
+    }
+
     return (
-        <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-b from-gray-900 to-black text-white">
+        <RoleBasedRoute>
+            <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-b from-gray-900 to-black text-white">
             {/* Header */}
             <nav className="bg-black shadow-md w-full fixed top-0 left-0">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -37,6 +45,9 @@ function ViajePage() {
                         </span>
                         <span className="text-lg font-semibold">
                              {currentUserEmail}
+                             <button onClick={handleLogout}>
+                                Cerrar sesion
+                             </button>
                         </span>
                     </div>
                 </div>
@@ -49,7 +60,7 @@ function ViajePage() {
 
                 <div className="flex flex-col space-y-4">
                     {[1, 2, 3, 4, 5].map((viaje) => (
-                        <Link key={viaje} href={`/messages?userEmail=${currentUserEmail}&viaje=${viaje}`}>
+                        <Link key={viaje} href={`/messages?viaje=${viaje}`}>
                             <button className="w-48 h-16 bg-orange-500 text-white font-semibold text-lg rounded-lg shadow-md hover:bg-orange-600 transition-all duration-300">
                                 Viaje {viaje}
                             </button>
@@ -58,5 +69,6 @@ function ViajePage() {
                 </div>
             </div>
         </div>
+        </RoleBasedRoute>
     );
 }

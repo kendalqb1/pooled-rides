@@ -3,11 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation"; // Para Next.js 13+
 import { SupabaseClient } from "../../utils/supabaseClient"; // Asegúrate de importar correctamente el archivo
+import { useAuth } from "@/context/AuthContext";
+import { traducirErrorSupabase } from "@/utils/helpers";
 
 export default function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState(""); // Estado para manejar el error
+    const [isLoading, setIsLoading] = useState(false);
+    const { login } = useAuth();
     const router = useRouter();
 
     // Redirige a la página de "viajes" con el parámetro del correo del usuario
@@ -29,26 +33,24 @@ export default function Login() {
     // Maneja el login
     const handleLogin = async (e) => {
         e.preventDefault();
+        setIsLoading(true);
         setError(""); // Limpiar el error si el usuario intenta de nuevo
 
         try {
-            const supabase = SupabaseClient.getInstance(); 
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email,
-                password,
-            });
-
-            if (error) {
-                setError(error.message); // Si hay un error, mostrarlo
+            const { success, data, error } = await login(email, password);
+            if (!success) {
+                setError(traducirErrorSupabase(error)); // Si hay un error, mostrarlo
                 return; // No redirigir si hay error
             }
 
             // Si login es exitoso, redirigir a la página de "viajes"
-            
             redirectToViajes();
         } catch (err) {
             setError("Hubo un problema al intentar iniciar sesión.");
+        } finally {
+            setIsLoading(false);
         }
+
     };
 
     return (
@@ -92,7 +94,7 @@ export default function Login() {
                     type="submit"
                     className="w-full mt-4 bg-orange-500 text-white py-2 rounded-md hover:bg-orange-800 transition"
                 >
-                    Iniciar Sesion
+                    {!isLoading ? "Iniciar Sesion" : "Cargando..."}
                 </button>
 
                 <button

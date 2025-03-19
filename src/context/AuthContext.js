@@ -18,13 +18,12 @@ export function AuthProvider({ children }) {
     const fetchUserRole = async (userId) => {
         try {
             const { data, error } = await supabase
-                .from('user_profiles')
-                .select('role')
-                .eq('id', userId)
+                .from('Perfiles')
+                .select('Rol')
+                .eq('Usuario_ID', userId)
                 .single()
-
             if (error) throw error
-            return data.role
+            return data.Rol
         } catch (error) {
             console.error('Error al obtener el rol del usuario:', error)
             return 'usuario' // Rol por defecto si hay error
@@ -88,15 +87,12 @@ export function AuthProvider({ children }) {
         try {
             const { data, error } = await supabase.auth.signInWithPassword({
                 email,
-                password,
-                options: {
-                    persistSession: true
-                }
+                password
             })
 
             if (error) throw error
 
-            // Obtener el rol después del login
+            // // Obtener el rol después del login
             if (data.user) {
                 const role = await fetchUserRole(data.user.id)
                 setUserRole(role)
@@ -124,6 +120,7 @@ export function AuthProvider({ children }) {
         loading,
         login,
         logout,
+        hasRole,
         isAuthenticated: !!user
     }
 

@@ -1,10 +1,19 @@
 'use client'
 import { useAuth } from '@/context/AuthContext'
-import { useRouter } from 'next/router'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
 export default function RoleBasedRoute({ children, requiredRole = 'usuario' }) {
     const { loading, isAuthenticated, hasRole } = useAuth()
     const router = useRouter()
+
+    // Use useEffect for navigation instead of doing it during render
+    useEffect(() => {
+        // Only redirect when not loading and we know the user is not authenticated
+        if (!loading && !isAuthenticated) {
+            router.push('/login')
+        }
+    }, [loading, isAuthenticated, router])
 
     // Si está cargando, muestra un indicador de carga
     if (loading) {
@@ -15,10 +24,13 @@ export default function RoleBasedRoute({ children, requiredRole = 'usuario' }) {
         )
     }
 
-    // Si no está autenticado, redirige al login
+    // If not authenticated, show loading while the redirect happens
     if (!isAuthenticated) {
-        router.push('/login')
-        return null
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="w-12 h-12 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+            </div>
+        )
     }
 
     // Si está autenticado pero no tiene el rol requerido, muestra un mensaje de acceso denegado
