@@ -81,6 +81,30 @@ export default function AceptacionUserPage() {
                             <h3 style={{ margin: '0 0 5px 0', fontSize: '18px', color: '#000000', fontFamily: 'Poppins, sans-serif' }}>
                                 {usuario.nombre}
                             </h3>
+                            <p style={{ margin: '10px 0 0 0', fontSize: '14px', color: '#b0b0b0', fontFamily: 'Poppins, sans-serif' }}>
+                                {(() => {
+                                    const registro = new Date(`${usuario.addAt}T${usuario.addAtTime}`);
+                                    const ahora = new Date();
+                                    const diferenciaMs = ahora - registro;
+                                    const minutos = Math.floor(diferenciaMs / (1000 * 60));
+                                    const horas = Math.floor(minutos / 60);
+                                    const dias = Math.floor(horas / 24);
+                                    const semanas = Math.floor(dias / 7);
+                                    const meses = Math.floor(semanas / 4);
+
+                                    if (meses > 0) {
+                                        return `Registrado hace ${meses} ${meses === 1 ? 'mes' : 'meses'}`;
+                                    } else if (semanas > 0) {
+                                        return `Registrado hace ${semanas} ${semanas === 1 ? 'semana' : 'semanas'}`;
+                                    } else if (dias > 0) {
+                                        return `Registrado hace ${dias} ${dias === 1 ? 'día' : 'días'}`;
+                                    } else if (horas > 0) {
+                                        return `Registrado hace ${horas} ${horas === 1 ? 'hora' : 'horas'}`;
+                                    } else {
+                                        return `Registrado hace ${minutos} ${minutos === 1 ? 'minuto' : 'minutos'}`;
+                                    }
+                                })()}
+                            </p>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                             <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
@@ -121,30 +145,6 @@ export default function AceptacionUserPage() {
                                     ✕
                                 </button>
                             </div>
-                            <p style={{ margin: '10px 0 0 0', fontSize: '14px', color: '#b0b0b0', fontFamily: 'Poppins, sans-serif' }}>
-                                {(() => {
-                                    const registro = new Date(`${usuario.addAt}T${usuario.addAtTime}`);
-                                    const ahora = new Date();
-                                    const diferenciaMs = ahora - registro;
-                                    const minutos = Math.floor(diferenciaMs / (1000 * 60));
-                                    const horas = Math.floor(minutos / 60);
-                                    const dias = Math.floor(horas / 24);
-                                    const semanas = Math.floor(dias / 7);
-                                    const meses = Math.floor(semanas / 4);
-
-                                    if (meses > 0) {
-                                        return `Registrado hace ${meses} ${meses === 1 ? 'mes' : 'meses'}`;
-                                    } else if (semanas > 0) {
-                                        return `Registrado hace ${semanas} ${semanas === 1 ? 'semana' : 'semanas'}`;
-                                    } else if (dias > 0) {
-                                        return `Registrado hace ${dias} ${dias === 1 ? 'día' : 'días'}`;
-                                    } else if (horas > 0) {
-                                        return `Registrado hace ${horas} ${horas === 1 ? 'hora' : 'horas'}`;
-                                    } else {
-                                        return `Registrado hace ${minutos} ${minutos === 1 ? 'minuto' : 'minutos'}`;
-                                    }
-                                })()}
-                            </p>
                         </div>
                     </div>
                 ))}
