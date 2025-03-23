@@ -15,16 +15,15 @@ export default function AceptacionUserPage() {
                     type="text"
                     style={{
                         width: '100%',
-                        padding: '10px 40px 10px 10px', // Espacio para el ícono
+                        padding: '10px 40px 10px 10px',
                         borderRadius: '20px',
-                        border: '1px solid #ffffff', // Bordes blancos
-                        backgroundColor: '#0c1822', // Fondo #0c1822
-                        color: '#ffffff', // Texto blanco
-                        outline: 'none', // Elimina el borde azul al enfocar
+                        border: '1px solid #ffffff',
+                        backgroundColor: '#0c1822',
+                        color: '#ffffff',
+                        outline: 'none',
                         fontFamily: 'Poppins, sans-serif'
                     }}
                 />
-                {/* Ícono de búsqueda */}
                 <Image
                     src="/search.svg"
                     alt="Search Icon"
@@ -35,11 +34,10 @@ export default function AceptacionUserPage() {
                         top: '50%',
                         right: '10px',
                         transform: 'translateY(-50%)',
-                        pointerEvents: 'none' // Evita que interfiera con el input
+                        pointerEvents: 'none'
                     }}
                 />
             </div>
-            {/* Lista de tarjetas */}
             <div style={{ marginTop: '20px' }}>
                 {usuarios.map((usuario, index) => (
                     <div
@@ -47,7 +45,7 @@ export default function AceptacionUserPage() {
                         style={{
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'space-between', // Espaciado entre elementos
+                            justifyContent: 'space-between',
                             backgroundColor: '#ffffff',
                             padding: '15px',
                             borderRadius: '20px',
@@ -56,7 +54,6 @@ export default function AceptacionUserPage() {
                             fontFamily: 'Poppins, sans-serif'
                         }}
                     >
-                        {/* Círculo con iniciales */}
                         <div
                             style={{
                                 width: '40px',
@@ -85,88 +82,83 @@ export default function AceptacionUserPage() {
                                 {usuario.nombre}
                             </h3>
                         </div>
-                        {/* Botones de acción y párrafo alineados a la derecha */}
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-                            <div>
-                                <div style={{ display: 'flex', gap: '10px', marginTop: '10px', justifyContent: 'flex-end' }}>
-                                    <button
-                                        style={{
-                                            width: '40px',
-                                            height: '40px',
-                                            borderRadius: '10px', // Bordes mixtos
-                                            backgroundColor: '#f96b05',
-                                            color: '#ffffff',
-                                            border: 'none',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            cursor: 'pointer',
-                                            fontSize: '18px',
-                                            fontWeight: 'bold'
-                                        }}
-                                    >
-                                        ✓
-                                    </button>
-                                    <button
-                                        style={{
-                                            width: '40px',
-                                            height: '40px',
-                                            borderRadius: '10px', // Bordes mixtos
-                                            backgroundColor: '#f96b05',
-                                            color: '#ffffff',
-                                            border: 'none',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            cursor: 'pointer',
-                                            fontSize: '18px',
-                                            fontWeight: 'bold'
-                                        }}
-                                    >
-                                        ✕
-                                    </button>
-                                </div>
-                                {/* Párrafo debajo de los botones */}
-                                <p style={{ margin: '10px 0 0 0', fontSize: '14px', color: '#b0b0b0', fontFamily: 'Poppins, sans-serif' }}>
-                                    {(() => {
-                                        const registro = new Date(`${usuario.addAt}T${usuario.addAtTime}`);
-                                        const ahora = new Date();
-                                        const diferenciaMs = ahora - registro;
-                                        const minutos = Math.floor(diferenciaMs / (1000 * 60));
-                                        const horas = Math.floor(minutos / 60);
-                                        const dias = Math.floor(horas / 24);
-                                        const semanas = Math.floor(dias / 7);
-                                        const meses = Math.floor(semanas / 4);
-
-                                        if (meses > 0) {
-                                            return `Registrado hace ${meses} ${meses === 1 ? 'mes' : 'meses'}`;
-                                        } else if (semanas > 0) {
-                                            return `Registrado hace ${semanas} ${semanas === 1 ? 'semana' : 'semanas'}`;
-                                        } else if (dias > 0) {
-                                            return `Registrado hace ${dias} ${dias === 1 ? 'día' : 'días'}`;
-                                        } else if (horas > 0) {
-                                            return `Registrado hace ${horas} ${horas === 1 ? 'hora' : 'horas'}`;
-                                        } else {
-                                            return `Registrado hace ${minutos} ${minutos === 1 ? 'minuto' : 'minutos'}`;
-                                        }
-                                    })()}
-                                </p>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                            <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                                <button
+                                    style={{
+                                        width: '40px',
+                                        height: '40px',
+                                        borderRadius: '10px',
+                                        backgroundColor: '#f96b05',
+                                        color: '#ffffff',
+                                        border: 'none',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                        fontSize: '18px',
+                                        fontWeight: 'bold'
+                                    }}
+                                >
+                                    ✓
+                                </button>
+                                <button
+                                    style={{
+                                        width: '40px',
+                                        height: '40px',
+                                        borderRadius: '10px',
+                                        backgroundColor: '#f96b05',
+                                        color: '#ffffff',
+                                        border: 'none',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                        fontSize: '18px',
+                                        fontWeight: 'bold'
+                                    }}
+                                >
+                                    ✕
+                                </button>
                             </div>
+                            <p style={{ margin: '10px 0 0 0', fontSize: '14px', color: '#b0b0b0', fontFamily: 'Poppins, sans-serif' }}>
+                                {(() => {
+                                    const registro = new Date(`${usuario.addAt}T${usuario.addAtTime}`);
+                                    const ahora = new Date();
+                                    const diferenciaMs = ahora - registro;
+                                    const minutos = Math.floor(diferenciaMs / (1000 * 60));
+                                    const horas = Math.floor(minutos / 60);
+                                    const dias = Math.floor(horas / 24);
+                                    const semanas = Math.floor(dias / 7);
+                                    const meses = Math.floor(semanas / 4);
+
+                                    if (meses > 0) {
+                                        return `Registrado hace ${meses} ${meses === 1 ? 'mes' : 'meses'}`;
+                                    } else if (semanas > 0) {
+                                        return `Registrado hace ${semanas} ${semanas === 1 ? 'semana' : 'semanas'}`;
+                                    } else if (dias > 0) {
+                                        return `Registrado hace ${dias} ${dias === 1 ? 'día' : 'días'}`;
+                                    } else if (horas > 0) {
+                                        return `Registrado hace ${horas} ${horas === 1 ? 'hora' : 'horas'}`;
+                                    } else {
+                                        return `Registrado hace ${minutos} ${minutos === 1 ? 'minuto' : 'minutos'}`;
+                                    }
+                                })()}
+                            </p>
                         </div>
                     </div>
                 ))}
             </div>
-            {/* Botón de confirmación */}
             <div
                 style={{
                     display: 'flex',
-                    justifyContent: 'center', // Centra horizontalmente
+                    justifyContent: 'center',
                     marginTop: '20px'
                 }}
             >
                 <button
                     style={{
-                        width: '100%', // Mismo ancho que las tarjetas
+                        width: '100%',
                         padding: '15px',
                         borderRadius: '20px',
                         backgroundColor: '#f96b05',
