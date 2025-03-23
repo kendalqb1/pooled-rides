@@ -88,7 +88,7 @@ export default function AceptacionUserPage() {
                         {/* Botones de acción y párrafo alineados a la derecha */}
                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
                             <div>
-                                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                                <div style={{ display: 'flex', gap: '10px', marginTop: '10px', justifyContent: 'flex-end' }}>
                                     <button
                                         style={{
                                             width: '40px',
