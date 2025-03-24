@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 
-const publicRoutes = ['/login', '/registro', '/cambioClave', '/accesoDenegado'];
+const publicRoutes = ['/login', '/registro', '/cambioClave', '/accesoDenegado', '/aceptacionUser' ];
 
 export default function AuthStateManager({ children }) {
     const { isAuthenticated, loading, sessionChecked } = useAuth();
