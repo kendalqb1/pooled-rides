@@ -6,7 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 
 
 
-const publicRoutes = ['/login', '/registro', '/cambioClave', '/accesoDenegado', '/aceptacionUser',  '/validationPage' ];
+const publicRoutes = ['/login', '/registro', '/cambioClave', '/accesoDenegado', '/aceptacionUser' ];
 
 
 export default function AuthStateManager({ children }) {

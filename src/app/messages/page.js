@@ -209,7 +209,6 @@ function MessagesPage() {
                 messageData.Audio_Url = publicUrl
                 messageData.Duracion_Audio = recordingTime
             }
-
             console.log('first')
 
             const { error } = await supabase

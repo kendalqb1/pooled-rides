@@ -1,13 +1,19 @@
+import { SupabaseClient } from '@/utils/supabaseClient';
 import Image from 'next/image';
 
 const usuarios = [
-    { nombre: "Aditya Pratama", addAt: "2023-09-01", addAtTime: "10:00:00" },
-    { nombre: "Siti Nurhaliza", addAt: "2025-02-02", addAtTime: "11:00:00" },
-    { nombre: "Budi Santoso", addAt: "2024-09-03", addAtTime: "12:00:00" },
-    { nombre: "Rina Kartika", addAt: "2025-03-23", addAtTime: "13:00:00" },
+    { nombre: "Aditya Pratama", addAt: "2023-09-01", addAtTime: "10:00:00", email: "" },
+    { nombre: "Siti Nurhaliza", addAt: "2025-02-02", addAtTime: "11:00:00", email: "" },
+    { nombre: "Budi Santoso", addAt: "2024-09-03", addAtTime: "12:00:00", email: "" },
+    { nombre: "Rina Kartika", addAt: "2025-03-23", addAtTime: "13:00:00", email: "" },
 ];
 
 export default function AceptacionUserPage() {
+    const supabase = SupabaseClient.getInstance()
+    const handlePressBtn = (email, state = "approved") => {
+        const response = supabase.from('perfiles').update({ valido_empresa: state }).eq('correo', email)
+    }
+
     return (
         <div style={{ backgroundColor: '#0c1822', color: '#ffffff', minHeight: '100vh', padding: '20px', fontFamily: 'Poppins, sans-serif' }}>
             <div style={{ marginTop: '20px', position: 'relative', width: '100%' }}>
@@ -109,6 +115,7 @@ export default function AceptacionUserPage() {
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                             <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
                                 <button
+                                    onClick={() => handlePressBtn(usuario.email, 'approved')}
                                     style={{
                                         width: '40px',
                                         height: '40px',
@@ -127,6 +134,7 @@ export default function AceptacionUserPage() {
                                     ✓
                                 </button>
                                 <button
+                                    onClick={() => handlePressBtn(usuario.email, 'rejected')}
                                     style={{
                                         width: '40px',
                                         height: '40px',

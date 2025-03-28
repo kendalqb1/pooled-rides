@@ -1,5 +1,6 @@
 "use client";
 
+import { SupabaseClient } from "@/utils/supabaseClient";
 import { useState } from "react";
 
 export default function RegistroForm() {
@@ -11,20 +12,103 @@ export default function RegistroForm() {
     const [archivo, setArchivo] = useState(null);
     const [aceptaTerminos, setAceptaTerminos] = useState(false);
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (!aceptaTerminos) {
-            alert("Debes aceptar los términos y condiciones.");
-            return;
+    const [isLoading, setIsLoading] = useState(false);
+
+
+
+    const handleSubmit = async (e) => {
+        try {
+            setIsLoading(true);
+            e.preventDefault();
+            // Obtener cliente de Supabase
+            const supabase = SupabaseClient.getInstance()
+            const { data, error } = await supabase.auth.signUp({
+                email: email,
+                password: contrasena,
+            });
+
+            if (error) {
+                throw error;
+            }
+
+            // Subir archivo
+            // if (archivo) {
+            //     const { data: fileData, error: fileError } = await supabase.storage
+            //         .from('archivos')
+            //         .upload(`archivos/${data.user.id}/${archivo.name}`, archivo);
+
+            //     if (fileError) {
+            //         throw fileError;
+            //     }
+            // }
+
+            // Crear registro en la tabla de usuarios
+            const { error: userError } = await supabase
+                .from('usuarios')
+                .insert([
+                    {
+                        correo: email,
+                        nombre: nombre,
+                        empresa_id: 1,
+                        user_id: data.user.id,
+                        cedula: 1233412343
+                    }
+                ]);
+
+            if (userError) {
+                throw userError;
+            }
+
+            const { data: userData, error: userError2 } = await supabase
+                .from('usuarios')
+                .select('usuario_id')
+                .eq('user_id', data.user.id)
+                .single();
+            
+            if (userError2) {
+                throw userError2;
+            }
+
+            // Crear registro en la tabla de perfiles
+            const { data: perfilData, error: perfilError } = await supabase
+                .from('perfiles')
+                .insert([
+                    {
+                        usuario_id: userData.usuario_id,
+                        rol: rol,
+                        valido_empresa: 'on_hold',  // on_hold, approved, rejected
+                        acepta_terminos: aceptaTerminos,
+                        solicito_registro: new Date().toISOString(), 
+                    }
+                ]);
+
+            if (perfilError) {  
+                throw perfilError;
+            }
+
+
+
+        } catch (error) {
+            console.log(error)
+        } finally {
+            setIsLoading(false);
         }
 
-        // Aquí podrías procesar el envío de datos, como enviar un API o guardar en el estado
-        console.log({ nombre, email, contrasena, codigo, rol, archivo, aceptaTerminos });
     };
 
     const handleFileChange = (e) => {
         setArchivo(e.target.files[0]);
     };
+
+    const handleRegisterUser = async () => {
+
+
+
+
+
+    }
+
+
 
     return (
         <div className="flex text-black flex-col items-center justify-center min-h-screen bg-[#0c1822]">
@@ -145,7 +229,7 @@ export default function RegistroForm() {
                         transition: "background-color 0.3s ease"
                     }}
                 >
-                    Registrarse
+                    {isLoading ? "Cargando..." : "Registrarse"}
                 </button>
             </form>
 
